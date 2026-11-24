@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Badge, Button, Card, Screen, SectionLabel, Title } from '../../components/ui';
 import { useVault } from '../../state/VaultProvider';
 import { buildFilledTemplate, getTemplate } from '../../data/formTemplates';
-import { exportDemenagementPdf, exportFilledPdf, sharePdf } from '../../lib/pdf';
+import { exportDemenagementPdf, exportFilledPdf } from '../../lib/pdf';
 import { colors, spacing } from '../../lib/theme';
 
 export default function FormulaireDetailScreen() {
@@ -42,11 +42,11 @@ export default function FormulaireDetailScreen() {
   const handleExport = async () => {
     setBusy('export');
     try {
-      const result =
-        template.id === 'demenagement'
-          ? await exportDemenagementPdf(filled, (id) => plainValues[id] ?? '', includeLetter)
-          : await exportFilledPdf(filled);
-      await sharePdf(result.uri, `Coffre - ${template.title}.pdf`);
+      if (template.id === 'demenagement') {
+        await exportDemenagementPdf(filled, (id) => plainValues[id] ?? '', includeLetter);
+      } else {
+        await exportFilledPdf(filled);
+      }
       await saveRun(
         template.id,
         filled.missingFields,

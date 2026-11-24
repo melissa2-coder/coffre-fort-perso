@@ -10,7 +10,6 @@ export type StoredDocument = {
   size: number;
   category: string;
   createdAt: number;
-  fileName: string;
 };
 
 export type Habit = {

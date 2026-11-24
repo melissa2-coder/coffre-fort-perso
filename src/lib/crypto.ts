@@ -1,8 +1,7 @@
 import * as Crypto from 'expo-crypto';
-import * as SecureStore from 'expo-secure-store';
 import { xchacha20poly1305 } from '@noble/ciphers/chacha.js';
+import { masterKeyStore } from './masterKeyStore';
 
-const KEY_ID = 'coffre.master.key.v1';
 const KEY_PREFIX = 'cx1';
 const NONCE_LENGTH = 24;
 const KEY_LENGTH = 32;
@@ -36,7 +35,7 @@ export function toBase64(bytes: Uint8Array): string {
 
 export function fromBase64(encoded: string): Uint8Array {
   const values: number[] = [];
-  const clean = encoded.replace(/=\s*$/, '');
+  const clean = encoded.replace(/=+\s*$/, '');
   for (const char of clean) {
     const index = BASE64_ALPHABET.indexOf(char);
     if (index === -1) {
@@ -68,15 +67,13 @@ export async function loadMasterKey(): Promise<Uint8Array> {
   if (cachedKey) {
     return cachedKey;
   }
-  const stored = await SecureStore.getItemAsync(KEY_ID);
+  const stored = await masterKeyStore.read();
   if (stored) {
     cachedKey = fromBase64(stored);
     return cachedKey;
   }
   const key = Crypto.getRandomBytes(KEY_LENGTH);
-  await SecureStore.setItemAsync(KEY_ID, toBase64(key), {
-    keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-  });
+  await masterKeyStore.store(toBase64(key));
   cachedKey = key;
   return key;
 }
@@ -87,7 +84,7 @@ export function isMasterKeyCached(): boolean {
 
 export async function wipeMasterKey(): Promise<void> {
   cachedKey = null;
-  await SecureStore.deleteItemAsync(KEY_ID);
+  await masterKeyStore.remove();
 }
 
 const encoder = new TextEncoder();

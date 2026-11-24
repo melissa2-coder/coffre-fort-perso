@@ -1,5 +1,6 @@
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { Platform } from 'react-native';
 import { DEMENAGEMENT_ORGANISMES as ORGANISMES } from '../data/formTemplates';
 import type { FilledTemplate } from '../data/formTemplates';
 
@@ -122,9 +123,21 @@ function organismesHtml(): string {
 
 export type PdfExportResult = { uri: string };
 
-export async function exportFilledPdf(filled: FilledTemplate): Promise<PdfExportResult> {
-  const result = await Print.printToFileAsync({ html: documentHtml(filled) });
+async function deliverHtml(html: string, title: string): Promise<PdfExportResult> {
+  if (Platform.OS === 'web') {
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener');
+    setTimeout(() => URL.revokeObjectURL(url), 120_000);
+    return { uri: url };
+  }
+  const result = await Print.printToFileAsync({ html });
+  await sharePdf(result.uri, title);
   return { uri: result.uri };
+}
+
+export async function exportFilledPdf(filled: FilledTemplate): Promise<PdfExportResult> {
+  return deliverHtml(documentHtml(filled), `Coffre - ${filled.template.title}.pdf`);
 }
 
 export async function exportDemenagementPdf(
@@ -133,11 +146,13 @@ export async function exportDemenagementPdf(
   includeLetter: boolean,
 ): Promise<PdfExportResult> {
   const html = `${documentHtml(filled)}${includeLetter ? demenagementLetterHtml(filled, get) : ''}${organismesHtml()}`;
-  const result = await Print.printToFileAsync({ html });
-  return { uri: result.uri };
+  return deliverHtml(html, `Coffre - ${filled.template.title}.pdf`);
 }
 
 export async function sharePdf(uri: string, title: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    return;
+  }
   if (await Sharing.isAvailableAsync()) {
     await Sharing.shareAsync(uri, {
       mimeType: 'application/pdf',

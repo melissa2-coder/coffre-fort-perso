@@ -1,10 +1,16 @@
 # Coffre
 
-Application mobile **100 % locale** (iOS / Android) qui centralise vos
-préférences, vos documents administratifs et vos habitudes, chiffrés sur
-votre téléphone — et qui remplit vos formulaires complexes
+Application **100 % locale** (iOS, Android **et site web installable**) qui
+centralise vos préférences, vos documents administratifs et vos habitudes,
+chiffrés sur votre appareil — et qui remplit vos formulaires complexes
 (déclaration de revenus, fiche santé, déménagement) en un clic, sans
 aucun envoi cloud.
+
+**Version web** : le site exporté (GitHub Pages) fonctionne avec les mêmes
+mécanismes — chiffrement identique, stockage IndexedDB d'origine (le coffre
+sécurisé est propriétaire du navigateur), aucun appel réseau avec vos
+données. Sur mobile natif, la clé est en outre protégée par Keychain /
+Keystore et la biométrie.
 
 ## Garanties de confidentialité
 
@@ -47,8 +53,9 @@ src/
 ```
 
 - **Navigation** : Expo Router (routes dans `src/app/`).
-- **Stockage** : `expo-sqlite` (base `coffre.db`), une ligne chiffrée par donnée.
-- **Fichiers** : `expo-file-system` (API `File`/`Directory`), dossier `coffre/`.
+- **Stockage natif** : `expo-sqlite` (base `coffre.db`), une ligne chiffrée par donnée.
+- **Stockage web** : IndexedDB (`src/lib/db.web.ts`, `blobStore.web.ts`, `webIdb.ts`) via extensions de plateforme Metro.
+- **Fichiers natifs** : `expo-file-system` (API `File`/`Directory`), dossier `coffre/`.
 - **PDF** : `expo-print` + `expo-sharing` (génération locale, partage à votre main).
 
 ## Commandes

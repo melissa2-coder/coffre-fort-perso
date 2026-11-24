@@ -31,7 +31,11 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "static"
+    },
+    "experiments": {
+      "baseUrl": "/coffre-fort-perso" 
     },
     "plugins": [
       "expo-router",

@@ -28,7 +28,7 @@ function iconForMime(mimeType: string): 'image' | 'document' | 'reader' {
 }
 
 export default function DocumentsScreen() {
-  const { documents, addDocument, removeDocument, revealDocument } = useVault();
+  const { documents, addDocument, removeDocument, openDocument } = useVault();
   const [busy, setBusy] = useState<string | null>(null);
   const [pending, setPending] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
 
@@ -64,15 +64,14 @@ export default function DocumentsScreen() {
     async (id: string) => {
       setBusy(id);
       try {
-        const file = await revealDocument(id);
-        await file.preview();
+        await openDocument(id);
       } catch {
         Alert.alert('Aperçu', 'Ce document ne peut pas être prévisualisé.');
       } finally {
         setBusy(null);
       }
     },
-    [revealDocument],
+    [openDocument],
   );
 
   const totalSize = documents.reduce((sum, doc) => sum + doc.size, 0);

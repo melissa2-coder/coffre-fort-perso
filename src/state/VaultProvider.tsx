@@ -8,8 +8,8 @@ import React, {
   useState,
 } from 'react';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { Directory, File, Paths } from 'expo-file-system';
 import type { DocumentPickerAsset } from 'expo-document-picker';
+import { File } from 'expo-file-system';
 import {
   loadMasterKey,
   openBytes,
@@ -18,6 +18,13 @@ import {
   sealJson,
   wipeMasterKey,
 } from '../lib/crypto';
+import {
+  loadDocumentBlob,
+  previewDocumentBlob,
+  removeDocumentBlob,
+  saveDocumentBlob,
+  wipeAllDocumentBlobs,
+} from '../lib/blobStore';
 import { deleteRow, loadRows, putRow, wipeDatabase } from '../lib/db';
 import type {
   BiometricInfo,
@@ -28,9 +35,6 @@ import type {
   StoredDocument,
   VaultStatus,
 } from '../types';
-
-const DOCUMENT_DIRECTORY = 'coffre';
-const PREVIEW_PREFIX = 'preview-';
 
 type UnlockOutcome = { ok: true } | { ok: false; reason: string };
 
@@ -48,7 +52,7 @@ type VaultContextValue = {
   setFieldValue: (fieldId: string, value: string) => Promise<void>;
   addDocument: (asset: DocumentPickerAsset, category: string) => Promise<StoredDocument>;
   removeDocument: (id: string) => Promise<void>;
-  revealDocument: (id: string) => Promise<File>;
+  openDocument: (id: string) => Promise<void>;
   addHabit: (name: string, icon: string, target: number) => Promise<void>;
   removeHabit: (habitId: string) => Promise<void>;
   toggleHabitToday: (habitId: string) => Promise<void>;
@@ -65,16 +69,17 @@ function todayISO(): string {
   return `${now.getFullYear()}-${month}-${day}`;
 }
 
-function encryptionDirectory(base: Directory): Directory {
-  const directory = new Directory(base, DOCUMENT_DIRECTORY);
-  if (!directory.exists) {
-    directory.create();
+async function readPickedBytes(asset: DocumentPickerAsset): Promise<Uint8Array> {
+  if (asset.uri.startsWith('data:')) {
+    const base64 = asset.uri.slice(asset.uri.indexOf(',') + 1);
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
   }
-  return directory;
-}
-
-async function encryptionFileFor(fileName: string): Promise<File> {
-  return new File(encryptionDirectory(Paths.document), fileName);
+  return new File(asset.uri).bytes();
 }
 
 async function detectBiometric(): Promise<BiometricInfo> {
@@ -206,12 +211,9 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   const addDocument = useCallback(
     async (asset: DocumentPickerAsset, category: string): Promise<StoredDocument> => {
       const key = await requireKey();
-      const source = new File(asset.uri);
-      const plain = await source.bytes();
+      const plain = await readPickedBytes(asset);
       const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-      const fileName = `${id}.bin`;
-      const target = await encryptionFileFor(fileName);
-      await target.write(sealBytes(key, plain));
+      await saveDocumentBlob(id, sealBytes(key, plain));
       const document: StoredDocument = {
         id,
         name: asset.name || 'Document',
@@ -219,7 +221,6 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
         size: plain.length,
         category,
         createdAt: Date.now(),
-        fileName,
       };
       await putRow('documents', id, sealJson(key, document));
       setDocuments((current) => [document, ...current]);
@@ -230,36 +231,23 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
 
   const removeDocument = useCallback(
     async (id: string) => {
-      const document = documents.find((item) => item.id === id);
-      if (document) {
-        const file = await encryptionFileFor(document.fileName);
-        if (file.exists) {
-          file.delete();
-        }
-      }
+      await removeDocumentBlob(id);
       await deleteRow('documents', id);
       setDocuments((current) => current.filter((item) => item.id !== id));
     },
-    [documents],
+    [],
   );
 
-  const revealDocument = useCallback(
-    async (id: string): Promise<File> => {
+  const openDocument = useCallback(
+    async (id: string) => {
       const key = await requireKey();
       const document = documents.find((item) => item.id === id);
       if (!document) {
         throw new Error('document introuvable');
       }
-      const file = await encryptionFileFor(document.fileName);
-      const sealed = await file.bytes();
+      const sealed = await loadDocumentBlob(id);
       const plain = openBytes(key, sealed);
-      const extension = document.name.includes('.')
-        ? document.name.slice(document.name.lastIndexOf('.'))
-        : '.bin';
-      const cacheDirectory = encryptionDirectory(Paths.cache);
-      const outFile = new File(cacheDirectory, `${PREVIEW_PREFIX}${id}${extension}`);
-      await outFile.write(plain);
-      return outFile;
+      await previewDocumentBlob(id, plain, document.name, document.mimeType);
     },
     [documents, requireKey],
   );
@@ -334,14 +322,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   );
 
   const wipeEverything = useCallback(async () => {
-    const documentDirectory = new Directory(Paths.document, DOCUMENT_DIRECTORY);
-    if (documentDirectory.exists) {
-      documentDirectory.delete();
-    }
-    const cacheDirectory = new Directory(Paths.cache, DOCUMENT_DIRECTORY);
-    if (cacheDirectory.exists) {
-      cacheDirectory.delete();
-    }
+    await wipeAllDocumentBlobs();
     await wipeDatabase();
     await wipeMasterKey();
     lock();
@@ -362,7 +343,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
       setFieldValue,
       addDocument,
       removeDocument,
-      revealDocument,
+      openDocument,
       addHabit,
       removeHabit,
       toggleHabitToday,
@@ -383,7 +364,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
       setFieldValue,
       addDocument,
       removeDocument,
-      revealDocument,
+      openDocument,
       addHabit,
       removeHabit,
       toggleHabitToday,
