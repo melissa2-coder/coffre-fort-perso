@@ -72,6 +72,18 @@ npx expo export --platform android   # vérification du bundle Hermes
 > nécessitent un build de développement : `npx expo run:android`/`run:ios`
 > ou `eas build --profile development` — l'app n'est pas limitée à Expo Go.
 
+## Mise en ligne (GitHub Pages)
+
+```bash
+npx expo export --platform web   # génère dist/
+touch dist/.nojekyll
+```
+
+Publiez ensuite le contenu de `dist/` sur la branche `gh-pages`. Dans les
+réglages du dépôt : **Settings → Pages → Source : « Deploy from a branch » →
+`gh-pages` / (root)**. Le dépôt doit être **public** pour un site gratuit.
+Le site est alors servi sur `https://<compte>.github.io/coffre-fort-perso/`.
+
 ## Modèles de formulaires
 
 Chaque modèle déclare ses sections/champs, une checklist de pièces et des
