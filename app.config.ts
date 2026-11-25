@@ -1,0 +1,54 @@
+import type { ExpoConfig } from 'expo/config';
+
+const isNetlify = process.env.NETLIFY === 'true';
+
+const config: ExpoConfig = {
+  name: 'Coffre',
+  slug: 'coffre',
+  version: '1.0.0',
+  scheme: 'coffre',
+  orientation: 'portrait',
+  icon: './assets/icon.png',
+  userInterfaceStyle: 'automatic',
+  backgroundColor: '#0B1220',
+  ios: {
+    supportsTablet: true,
+    infoPlist: {
+      NSFaceIDUsageDescription:
+        'Coffre utilise Face ID pour déverrouiller votre coffre-fort de données personnelles, entièrement stocké sur votre appareil.',
+    },
+  },
+  android: {
+    adaptiveIcon: {
+      backgroundColor: '#0B1220',
+      foregroundImage: './assets/android-icon-foreground.png',
+      backgroundImage: './assets/android-icon-background.png',
+      monochromeImage: './assets/android-icon-monochrome.png',
+    },
+    predictiveBackGestureEnabled: false,
+    permissions: ['android.permission.USE_BIOMETRIC', 'android.permission.USE_FINGERPRINT'],
+  },
+  web: {
+    favicon: './assets/favicon.png',
+    output: 'static',
+  },
+  experiments: {
+    baseUrl: isNetlify ? '/' : '/coffre-fort-perso',
+  },
+  plugins: [
+    'expo-router',
+    'expo-status-bar',
+    'expo-secure-store',
+    'expo-sqlite',
+    'expo-sharing',
+    [
+      'expo-image-picker',
+      {
+        photosPermission:
+          'Coffre utilise la galerie photo pour importer vos documents administratifs, chiffrés puis stockés uniquement sur votre appareil.',
+      },
+    ],
+  ],
+};
+
+export default config;
