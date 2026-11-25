@@ -3,10 +3,12 @@ import { Alert, StyleSheet, Text, View } from 'react-native';
 import { Badge, Card, Empty, Screen, TextInputRow, Title } from '../../components/ui';
 import { useVault } from '../../state/VaultProvider';
 import { fieldsByCategory, PROFILE_FIELDS } from '../../data/profileFields';
-import { colors, spacing } from '../../lib/theme';
+import { useTheme, type Palette, spacing } from '../../lib/theme';
 
 export default function ProfilScreen() {
   const { values, setFieldValue } = useVault();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [drafts, setDrafts] = useState<Record<string, string>>(() =>
     Object.fromEntries(
       PROFILE_FIELDS.map((field) => [field.id, values[field.id]?.value ?? '']),
@@ -113,6 +115,8 @@ function PressableHeader({
   total: number;
   onToggle: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   return (
     <View style={styles.categoryHeader} onTouchEnd={onToggle}>
       <Text style={styles.categoryTitle}>{category}</Text>
@@ -125,7 +129,8 @@ function PressableHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
   categoryCard: { gap: 0, paddingVertical: 0 },
   categoryHeader: {
     alignItems: 'center',

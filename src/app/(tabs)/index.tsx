@@ -6,11 +6,13 @@ import { Badge, Card, Screen, SectionLabel, Title } from '../../components/ui';
 import { useVault } from '../../state/VaultProvider';
 import { FORM_TEMPLATES } from '../../data/formTemplates';
 import { PROFILE_FIELDS } from '../../data/profileFields';
-import { colors, spacing } from '../../lib/theme';
+import { useTheme, type Palette, spacing } from '../../lib/theme';
 
 export default function AccueilScreen() {
   const router = useRouter();
   const { values, documents, habits, entries, biometric, runs } = useVault();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
 
   const filledFields = useMemo(
     () =>
@@ -114,7 +116,8 @@ export default function AccueilScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
   securityCard: { backgroundColor: colors.card },
   securityHeader: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
   securityTitle: { color: colors.text, flex: 1, fontSize: 15, fontWeight: '700' },

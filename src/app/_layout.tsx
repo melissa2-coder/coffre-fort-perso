@@ -5,10 +5,11 @@ import { StyleSheet, View } from 'react-native';
 import { VaultProvider, useVault } from '../state/VaultProvider';
 import { LockScreen } from '../components/LockScreen';
 import { Loading } from '../components/ui';
-import { colors } from '../lib/theme';
+import { useTheme } from '../lib/theme';
 
 function Gate() {
   const { status } = useVault();
+  const { colors } = useTheme();
   if (status === 'loading') {
     return <Loading />;
   }
@@ -26,9 +27,10 @@ function Gate() {
 }
 
 export default function RootLayout() {
+  const { dark, colors } = useTheme();
   return (
-    <View style={styles.root}>
-      <StatusBar style="light" />
+    <View style={[styles.root, { backgroundColor: colors.bg }]}>
+      <StatusBar style={dark ? 'light' : 'dark'} />
       <VaultProvider>
         <Gate />
       </VaultProvider>
@@ -37,7 +39,7 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  root: { backgroundColor: colors.bg, flex: 1 },
+  root: { flex: 1 },
 });
 
 export const unstable_settings = {

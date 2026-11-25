@@ -5,11 +5,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { Badge, Card, Screen, Title } from '../../components/ui';
 import { useVault } from '../../state/VaultProvider';
 import { FORM_TEMPLATES } from '../../data/formTemplates';
-import { colors, spacing } from '../../lib/theme';
+import { useTheme, type Palette, spacing } from '../../lib/theme';
 
 export default function FormulairesScreen() {
   const router = useRouter();
   const { values, runs } = useVault();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
 
   const readiness = useMemo(
     () =>
@@ -67,7 +69,8 @@ export default function FormulairesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
   row: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
   icon: {
     alignItems: 'center',

@@ -3,10 +3,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, Screen } from '../components/ui';
 import { useVault } from '../state/VaultProvider';
-import { colors, radius, spacing } from '../lib/theme';
+import { useTheme, type Palette, radius, spacing } from '../lib/theme';
 
 export function LockScreen() {
   const { unlock, biometric, error } = useVault();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -72,7 +74,8 @@ export function LockScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
   hero: {
     alignItems: 'center',
     flexShrink: 1,

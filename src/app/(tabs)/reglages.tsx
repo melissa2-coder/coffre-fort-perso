@@ -3,10 +3,12 @@ import { Alert, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Badge, Button, Card, Screen, SectionLabel, Title } from '../../components/ui';
 import { useVault } from '../../state/VaultProvider';
-import { colors, spacing } from '../../lib/theme';
+import { useTheme, type Palette, spacing } from '../../lib/theme';
 
 export default function ReglagesScreen() {
   const { biometric, lock, wipeEverything, documents, values } = useVault();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
 
   const statFields = Object.keys(values).length;
 
@@ -79,7 +81,8 @@ export default function ReglagesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
   infoRow: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.sm },
   infoText: { color: colors.text, flex: 1, fontSize: 13, lineHeight: 19 },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },

@@ -3,7 +3,7 @@ import { Alert, StyleSheet, Text, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { useVault } from '../../state/VaultProvider';
 import { Badge, Button, Card, Empty, Screen, SectionLabel, Title } from '../../components/ui';
-import { colors, spacing } from '../../lib/theme';
+import { useTheme, type Palette, spacing } from '../../lib/theme';
 
 const CATEGORIES = [
   'Identité',
@@ -29,6 +29,8 @@ function iconForMime(mimeType: string): 'image' | 'document' | 'reader' {
 
 export default function DocumentsScreen() {
   const { documents, addDocument, removeDocument, openDocument } = useVault();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [busy, setBusy] = useState<string | null>(null);
   const [pending, setPending] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
 
@@ -144,7 +146,8 @@ export default function DocumentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
   categories: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   documentRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
   documentIcon: { fontSize: 24 },

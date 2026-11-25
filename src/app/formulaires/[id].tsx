@@ -6,7 +6,7 @@ import { Badge, Button, Card, Screen, SectionLabel, Title } from '../../componen
 import { useVault } from '../../state/VaultProvider';
 import { buildFilledTemplate, getTemplate } from '../../data/formTemplates';
 import { exportDemenagementPdf, exportFilledPdf } from '../../lib/pdf';
-import { colors, spacing } from '../../lib/theme';
+import { useTheme, type Palette, spacing } from '../../lib/theme';
 
 export default function FormulaireDetailScreen() {
   const router = useRouter();
@@ -14,6 +14,8 @@ export default function FormulaireDetailScreen() {
   const templateId = Array.isArray(params.id) ? params.id[0] : params.id;
   const template = getTemplate(templateId ?? '');
   const { values, saveRun } = useVault();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [busy, setBusy] = useState<'export' | null>(null);
   const [includeLetter, setIncludeLetter] = useState(true);
 
@@ -146,7 +148,8 @@ export default function FormulaireDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
   headerRow: {
     alignItems: 'center',
     flexDirection: 'row',

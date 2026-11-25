@@ -11,7 +11,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, radius, spacing } from '../lib/theme';
+import { useTheme, type Palette, radius, spacing } from '../lib/theme';
 
 export function Screen({
   children,
@@ -22,6 +22,8 @@ export function Screen({
   scroll?: boolean;
   padded?: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const style = [styles.screen, padded && styles.screenPadded];
   if (scroll) {
     return (
@@ -40,6 +42,8 @@ export function Screen({
 }
 
 export function Title({ text, sub }: { text: string; sub?: string }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   return (
     <View style={styles.titleBlock}>
       <Text style={styles.title}>{text}</Text>
@@ -57,6 +61,8 @@ export function Card({
   style?: StyleProp<ViewStyle>;
   onPress?: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   if (onPress) {
     return (
       <Pressable
@@ -77,9 +83,11 @@ export function Badge({
   label: string;
   tone?: 'neutral' | 'ok' | 'warn' | 'danger' | 'blue';
 }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const toneMap: Record<string, { bg: string; fg: string }> = {
     neutral: { bg: colors.cardHover, fg: colors.sub },
-    ok: { bg: colors.accentSoft, fg: colors.accent },
+    ok: { bg: colors.successSoft, fg: colors.success },
     warn: { bg: colors.warnSoft, fg: colors.warn },
     danger: { bg: colors.dangerSoft, fg: colors.danger },
     blue: { bg: colors.blueSoft, fg: colors.blue },
@@ -107,6 +115,8 @@ export function Button({
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const palette =
     variant === 'primary'
       ? styles.buttonPrimary
@@ -132,7 +142,7 @@ export function Button({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? colors.bg : colors.text} />
+        <ActivityIndicator color={variant === 'primary' ? colors.onAccent : colors.text} />
       ) : (
         <Text style={textPalette}>{label}</Text>
       )}
@@ -141,10 +151,14 @@ export function Button({
 }
 
 export function SectionLabel({ children }: { children: React.ReactNode }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   return <Text style={styles.sectionLabel}>{children}</Text>;
 }
 
 export function LabeledValue({ label, value }: { label: string; value: string }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   return (
     <View style={styles.labeledValue}>
       <Text style={styles.labeledValueLabel}>{label}</Text>
@@ -170,6 +184,8 @@ export function TextInputRow({
   secure?: boolean;
   keyboardType?: 'default' | 'number-pad' | 'phone-pad' | 'email-address';
 }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   return (
     <TextInput
       value={value}
@@ -188,6 +204,8 @@ export function TextInputRow({
 }
 
 export function Empty({ text }: { text: string }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   return (
     <Card style={styles.empty}>
       <Text style={styles.emptyText}>{text}</Text>
@@ -196,6 +214,8 @@ export function Empty({ text }: { text: string }) {
 }
 
 export function Loading() {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   return (
     <View style={styles.loading}>
       <ActivityIndicator color={colors.accent} />
@@ -203,69 +223,70 @@ export function Loading() {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  screen: { flexGrow: 1, gap: spacing.lg, paddingBottom: spacing.xl },
-  screenPadded: { paddingHorizontal: spacing.lg },
-  scrollContent: { paddingVertical: spacing.lg },
-  titleBlock: { gap: spacing.xs },
-  title: { color: colors.text, fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
-  subtitle: { color: colors.sub, fontSize: 14, lineHeight: 20 },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    gap: spacing.sm,
-  },
-  cardPressed: { opacity: 0.75 },
-  badge: {
-    alignSelf: 'flex-start',
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: 3,
-  },
-  badgeText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
-  button: {
-    alignItems: 'center',
-    borderRadius: radius.md,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    minHeight: 48,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  buttonPrimary: { backgroundColor: colors.accent },
-  buttonDanger: { backgroundColor: colors.dangerSoft, borderWidth: 1, borderColor: colors.danger },
-  buttonGhost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
-  buttonDisabled: { opacity: 0.5 },
-  buttonPrimaryText: { color: colors.bg, fontSize: 15, fontWeight: '700' },
-  buttonDangerText: { color: colors.danger, fontSize: 15, fontWeight: '700' },
-  buttonGhostText: { color: colors.text, fontSize: 15, fontWeight: '600' },
-  sectionLabel: {
-    color: colors.sub,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  labeledValue: { gap: 2 },
-  labeledValueLabel: { color: colors.sub, fontSize: 12 },
-  labeledValueValue: { color: colors.text, fontSize: 15, fontWeight: '600' },
-  textInput: {
-    backgroundColor: colors.bgSoft,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    color: colors.text,
-    fontSize: 15,
-    minHeight: 44,
-    paddingHorizontal: spacing.md,
-    width: '100%',
-  },
-  textInputMultiline: { minHeight: 72, paddingTop: spacing.md, textAlignVertical: 'top' },
-  empty: { alignItems: 'center', paddingVertical: spacing.xl },
-  emptyText: { color: colors.sub, fontSize: 14, textAlign: 'center' },
-  loading: { alignItems: 'center', flex: 1, justifyContent: 'center' },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    flex: { flex: 1 },
+    screen: { flexGrow: 1, gap: spacing.lg, paddingBottom: spacing.xl },
+    screenPadded: { paddingHorizontal: spacing.lg },
+    scrollContent: { paddingVertical: spacing.lg },
+    titleBlock: { gap: spacing.xs },
+    title: { color: colors.text, fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
+    subtitle: { color: colors.sub, fontSize: 14, lineHeight: 20 },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing.lg,
+      gap: spacing.sm,
+    },
+    cardPressed: { opacity: 0.75 },
+    badge: {
+      alignSelf: 'flex-start',
+      borderRadius: radius.pill,
+      paddingHorizontal: spacing.sm + 2,
+      paddingVertical: 3,
+    },
+    badgeText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
+    button: {
+      alignItems: 'center',
+      borderRadius: radius.md,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      minHeight: 48,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+    },
+    buttonPrimary: { backgroundColor: colors.accent },
+    buttonDanger: { backgroundColor: colors.dangerSoft, borderWidth: 1, borderColor: colors.danger },
+    buttonGhost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
+    buttonDisabled: { opacity: 0.5 },
+    buttonPrimaryText: { color: colors.onAccent, fontSize: 15, fontWeight: '700' },
+    buttonDangerText: { color: colors.danger, fontSize: 15, fontWeight: '700' },
+    buttonGhostText: { color: colors.text, fontSize: 15, fontWeight: '600' },
+    sectionLabel: {
+      color: colors.sub,
+      fontSize: 12,
+      fontWeight: '700',
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+    },
+    labeledValue: { gap: 2 },
+    labeledValueLabel: { color: colors.sub, fontSize: 12 },
+    labeledValueValue: { color: colors.text, fontSize: 15, fontWeight: '600' },
+    textInput: {
+      backgroundColor: colors.bgSoft,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      color: colors.text,
+      fontSize: 15,
+      minHeight: 44,
+      paddingHorizontal: spacing.md,
+      width: '100%',
+    },
+    textInputMultiline: { minHeight: 72, paddingTop: spacing.md, textAlignVertical: 'top' },
+    empty: { alignItems: 'center', paddingVertical: spacing.xl },
+    emptyText: { color: colors.sub, fontSize: 14, textAlign: 'center' },
+    loading: { alignItems: 'center', flex: 1, justifyContent: 'center' },
+  });

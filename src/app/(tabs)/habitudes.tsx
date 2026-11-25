@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Alert, Modal, StyleSheet, Text, View } from 'react-native';
 import { Badge, Button, Card, Empty, Screen, TextInputRow, Title } from '../../components/ui';
 import { useVault } from '../../state/VaultProvider';
-import { colors, spacing } from '../../lib/theme';
+import { useTheme, type Palette, spacing } from '../../lib/theme';
 
 const ICON_CHOICES = ['🏃', '💧', '📚', '🧘', '🛏️', '💊', '🌱', '🎸', '✉️', '🧹'];
 const TARGET_CHOICES = [1, 3, 5, 7];
@@ -35,6 +35,8 @@ function computeStreak(
 
 export default function HabitudesScreen() {
   const { habits, entries, toggleHabitToday, addHabit, removeHabit } = useVault();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [modalOpen, setModalOpen] = useState(false);
   const [name, setName] = useState('');
   const [icon, setIcon] = useState(ICON_CHOICES[0]);
@@ -187,7 +189,8 @@ export default function HabitudesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
   habitRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
   habitIcon: { fontSize: 26 },
   habitText: { flex: 1, gap: 2 },
