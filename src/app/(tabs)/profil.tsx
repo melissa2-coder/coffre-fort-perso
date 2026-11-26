@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Badge, Card, Empty, Screen, TextInputRow, Title } from '../../components/ui';
 import { useVault } from '../../state/VaultProvider';
 import { fieldsByCategory, PROFILE_FIELDS } from '../../data/profileFields';
@@ -118,14 +118,14 @@ function PressableHeader({
   const { colors } = useTheme();
   const styles = makeStyles(colors);
   return (
-    <View style={styles.categoryHeader} onTouchEnd={onToggle}>
+    <Pressable style={styles.categoryHeader} onPress={onToggle}>
       <Text style={styles.categoryTitle}>{category}</Text>
       <Badge
         label={filled === total ? 'Complet' : `${filled}/${total}`}
         tone={filled === total ? 'ok' : 'neutral'}
       />
       <Text style={styles.chevron}>{open ? '▾' : '▸'}</Text>
-    </View>
+    </Pressable>
   );
 }
 
