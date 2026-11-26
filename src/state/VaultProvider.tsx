@@ -18,6 +18,8 @@ import {
   sealJson,
   wipeMasterKey,
 } from '../lib/crypto';
+import { CREDENTIAL_ROUNDS, credentialStore, hashSecret, newSalt } from '../lib/credential';
+import { validateCredential, type CredentialKind } from '../lib/credential.rules';
 import {
   loadDocumentBlob,
   previewDocumentBlob,
@@ -47,7 +49,12 @@ type VaultContextValue = {
   runs: FormRun[];
   biometric: BiometricInfo;
   error: string | null;
+  /** Code de secours défini : kind, ou null si aucun ; undefined tant que non vérifié. */
+  credentialKind: CredentialKind | null | undefined;
   unlock: () => Promise<UnlockOutcome>;
+  unlockWithCredential: (secret: string) => Promise<UnlockOutcome>;
+  setCredential: (kind: CredentialKind, secret: string) => Promise<void>;
+  removeCredential: () => Promise<void>;
   lock: () => void;
   setFieldValue: (fieldId: string, value: string) => Promise<void>;
   addDocument: (asset: DocumentPickerAsset, category: string) => Promise<StoredDocument>;
@@ -120,10 +127,24 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     label: 'Non disponible',
   });
   const [error, setError] = useState<string | null>(null);
+  const [credentialKind, setCredentialKind] = useState<CredentialKind | null | undefined>(
+    undefined,
+  );
   const keyRef = useRef<Uint8Array | null>(null);
+  const credentialKindRef = useRef<CredentialKind | null>(null);
 
   useEffect(() => {
     detectBiometric().then(setBiometric);
+    credentialStore
+      .read()
+      .then((record) => {
+        credentialKindRef.current = record?.kind ?? null;
+        setCredentialKind(record?.kind ?? null);
+      })
+      .catch(() => {
+        credentialKindRef.current = null;
+        setCredentialKind(null);
+      });
   }, []);
 
   const loadAll = useCallback(async (key: Uint8Array) => {
@@ -150,6 +171,21 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     setRuns(decodedRuns);
   }, []);
 
+  const loadVault = useCallback(async (): Promise<UnlockOutcome> => {
+    try {
+      const key = await loadMasterKey();
+      await loadAll(key);
+      keyRef.current = key;
+      setStatus('unlocked');
+      return { ok: true };
+    } catch (cause) {
+      const message =
+        cause instanceof Error ? cause.message : 'Impossible de déverrouiller le coffre.';
+      setError(message);
+      return { ok: false, reason: message };
+    }
+  }, [loadAll]);
+
   const unlock = useCallback(async (): Promise<UnlockOutcome> => {
     setError(null);
     try {
@@ -164,21 +200,83 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
           requireConfirmation: false,
         });
         if (!auth.success) {
-          return { ok: false, reason: 'Authentification annulée ou refusée.' };
+          return {
+            ok: false,
+            reason:
+              'Biométrie annulée ou refusée — utilisez votre code de secours pour ouvrir le coffre.',
+          };
         }
+        return loadVault();
       }
-      const key = await loadMasterKey();
-      await loadAll(key);
-      keyRef.current = key;
-      setStatus('unlocked');
-      return { ok: true };
+      // Biométrie non détectée : le code de secours est requis s'il est défini.
+      if (credentialKindRef.current) {
+        return {
+          ok: false,
+          reason:
+            'La biométrie n’est pas disponible sur cet appareil — entrez votre code de secours.',
+        };
+      }
+      return loadVault();
     } catch (cause) {
       const message =
         cause instanceof Error ? cause.message : 'Impossible de déverrouiller le coffre.';
       setError(message);
       return { ok: false, reason: message };
     }
-  }, [loadAll]);
+  }, [loadVault]);
+
+  const unlockWithCredential = useCallback(
+    async (secret: string): Promise<UnlockOutcome> => {
+      setError(null);
+      try {
+        const record = await credentialStore.read();
+        if (!record) {
+          return { ok: false, reason: 'Aucun code de secours n’est défini.' };
+        }
+        const hash = await hashSecret(secret, record.salt, record.rounds);
+        if (hash !== record.hash) {
+          return {
+            ok: false,
+            reason: record.kind === 'pin' ? 'Code PIN incorrect.' : 'Mot de passe incorrect.',
+          };
+        }
+        return loadVault();
+      } catch (cause) {
+        const message =
+          cause instanceof Error ? cause.message : 'Vérification du code impossible.';
+        setError(message);
+        return { ok: false, reason: message };
+      }
+    },
+    [loadVault],
+  );
+
+  const setCredential = useCallback(
+    async (kind: CredentialKind, secret: string): Promise<void> => {
+      const problem = validateCredential(kind, secret);
+      if (problem) {
+        throw new Error(problem);
+      }
+      const salt = newSalt();
+      const hash = await hashSecret(secret, salt, CREDENTIAL_ROUNDS);
+      await credentialStore.store({
+        kind,
+        salt,
+        hash,
+        rounds: CREDENTIAL_ROUNDS,
+        createdAt: Date.now(),
+      });
+      credentialKindRef.current = kind;
+      setCredentialKind(kind);
+    },
+    [],
+  );
+
+  const removeCredential = useCallback(async (): Promise<void> => {
+    await credentialStore.remove();
+    credentialKindRef.current = null;
+    setCredentialKind(null);
+  }, []);
 
   const lock = useCallback(() => {
     keyRef.current = null;
@@ -325,6 +423,9 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     await wipeAllDocumentBlobs();
     await wipeDatabase();
     await wipeMasterKey();
+    await credentialStore.remove();
+    credentialKindRef.current = null;
+    setCredentialKind(null);
     lock();
   }, [lock]);
 
@@ -338,7 +439,11 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
       runs,
       biometric,
       error,
+      credentialKind,
       unlock,
+      unlockWithCredential,
+      setCredential,
+      removeCredential,
       lock,
       setFieldValue,
       addDocument,
@@ -359,7 +464,11 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
       runs,
       biometric,
       error,
+      credentialKind,
       unlock,
+      unlockWithCredential,
+      setCredential,
+      removeCredential,
       lock,
       setFieldValue,
       addDocument,

@@ -3,13 +3,14 @@ const connections = new Map<string, Promise<IDBDatabase>>();
 function openConnection(
   name: string,
   layout: { store: string; plain: boolean }[],
+  version = 1,
 ): Promise<IDBDatabase> {
   const existing = connections.get(name);
   if (existing) {
     return existing;
   }
   const opening = new Promise<IDBDatabase>((resolve, reject) => {
-    const request = indexedDB.open(name, 1);
+    const request = indexedDB.open(name, version);
     request.onupgradeneeded = () => {
       const db = request.result;
       for (const entry of layout) {
@@ -35,10 +36,12 @@ function withStore<T>(
   plain: boolean,
   run: (objectStore: IDBObjectStore) => IDBRequest<T> | void,
   mode: IDBTransactionMode,
+  version = 1,
 ): Promise<T> {
   return openConnection(
     name,
     stores.map((store) => ({ store, plain })),
+    version,
   ).then(
     (db) =>
       new Promise<T>((resolve, reject) => {
@@ -98,8 +101,9 @@ export function idbGetRaw(
   stores: string[],
   store: string,
   key: string,
+  version = 1,
 ): Promise<string | null> {
-  return withStore(name, stores, true, (os) => os.get(key) as IDBRequest<string | undefined>, 'readonly').then(
+  return withStore(name, stores, true, (os) => os.get(key) as IDBRequest<string | undefined>, 'readonly', version).then(
     (value) => value ?? null,
   );
 }
@@ -110,16 +114,23 @@ export function idbPutRaw(
   store: string,
   key: string,
   value: string,
+  version = 1,
 ): Promise<void> {
   return withStore(name, stores, true, (os) => {
     os.put(value, key);
-  }, 'readwrite');
+  }, 'readwrite', version);
 }
 
-export function idbDeleteRaw(name: string, stores: string[], store: string, key: string): Promise<void> {
+export function idbDeleteRaw(
+  name: string,
+  stores: string[],
+  store: string,
+  key: string,
+  version = 1,
+): Promise<void> {
   return withStore(name, stores, true, (os) => {
     os.delete(key);
-  }, 'readwrite');
+  }, 'readwrite', version);
 }
 
 export function idbGetBlob(

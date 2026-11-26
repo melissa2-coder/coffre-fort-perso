@@ -23,6 +23,11 @@ Keystore et la biométrie.
   jamais exportée ni synchronisée.
 - **Déverrouillage biométrique** (Face ID / empreinte) via
   `expo-local-authentication` avant tout accès aux données.
+- **Mode de secours par code** : un code PIN (4 ou 6 chiffres) ou un mot de
+  passe maître est demandé dès que la biométrie n'est pas détectée ou échoue.
+  Le secret n'est jamais stocké : seule une empreinte salée conservée (SHA-256
+  itéré sur natif, PBKDF2 150 000 itérations sur web) permet de le vérifier.
+  Se définit dans *Réglages → Code de secours*.
 - **Documents chiffrés au repos** : PDF et images sont chiffrés en binaire
   (`<uuid>.bin`) dans le dossier privé de l'app ; l'aperçu déchiffre à la
   volée vers le cache système.
